@@ -1,0 +1,662 @@
+SQL> connect
+Enter user-name: system
+Enter password:
+Connected.
+
+SQL> create user car_rental_system identified by password;
+
+User created.
+
+SQL> grant connect, create session, create user, resource to car_rental_system;
+
+Grant succeeded.
+
+GRANT CREATE JOB TO your_username;
+
+
+SQL> connect
+Enter user-name: car_rental_system
+Enter password:
+Connected.
+
+SQL> create table car_rental_system.users (
+  2  user_id number primary key,
+  3  username varchar2(50) unique not null,
+  4  password varchar2(50) not null,
+  5  role varchar2(20) check (role in ('admin', 'employee', 'customer'))
+  6  );
+
+Table created.
+
+SQL> create table car_rental_system.cars (
+  2      car_id number primary key,
+  3      brand varchar2(50) not null,
+  4      model varchar2(50) not null,
+  5      available number(1) default 1,
+  6      year number(4) unique not null
+  7  );
+
+Table created.
+
+SQL> create table car_rental_system.rentals (
+  2  rental_id number primary key,
+  3  user_id number references users(user_id),
+  4  car_id number references cars(car_id),
+  5  location_id references locations(location_id),
+  6  booking_id references bookings(booking_id),
+  7  rental_date date,
+  8  return_date date,
+  9  price number(10,2) not null,
+  10  );
+
+Table created.
+
+SQL> create table car_rental_system.locations (
+  2  location_id number primary key,
+  3  city varchar2(50) not null,
+  4  country varchar2(50) not null,
+  5  street varchar2(50),
+  6  zip_code number not null
+  7  );
+
+Table created.
+
+SQL> create table car_rental_system.bookings (
+  2  booking_id number primary key,
+  3  user_id number references users(user_id),
+  4  location_id number references locations(location_id),
+  5  car_id number references cars(car_id),
+  6  booking_date date not null,
+  7  booking_status varchar2(20)
+  8  );
+
+Table created.
+
+SQL> create index idx_brand on cars(brand);
+
+Index created.
+
+SQL> create index idx_rentals_user_id on rentals(user_id);
+
+Index created.
+
+SQL> create index idx_rentals_car_id on rentals(car_id);
+
+Index created.
+
+SQL> create index idx_city on locations(city);
+
+Index created.
+
+SQL> create index idx_bookings_user_id on bookings(user_id);
+
+Index created.
+
+SQL> create user car_rental_admin identified by admin_password;
+
+User created.
+
+SQL> create user car_rental_employee identified by employee_password;
+
+User created.
+
+SQL> create user car_rental_customer identified by customer_password;
+
+User created.
+
+SQL> grant 	 to car_rental_admin;
+
+Grant succeeded.
+
+SQL> grant connect, create session, resource to car_rental_employee;
+
+Grant succeeded.
+
+SQL> grant connect, create session, resource to car_rental_customer;
+
+Grant succeeded.
+
+SQL> grant select , insert, update , delete on users to car_rental_admin;
+
+Grant succeeded.
+
+SQL> CREATE OR REPLACE VIEW employee_users
+  2  AS SELECT user_id, username
+  3  FROM users
+  4  where role='employee' OR role='customer';
+
+SQL> grant select on employee_users to car_rental_employee;
+
+Grant succeeded.
+
+SQL> CREATE OR REPLACE VIEW customer_users
+  2  AS SELECT user_id, username
+  3  FROM users
+  4  where role='customer';
+
+SQL> grant select on customer_users to car_rental_customer;
+
+Grant succeeded.
+
+SQL> grant select, insert, update, delete on cars to car_rental_admin;
+
+Grant succeeded.
+
+SQL> CREATE OR REPLACE VIEW employee_booking AS
+  2  SELECT
+  3      cars.car_id,
+  4      cars.brand,
+  5      cars.model,
+  6      rentals.rental_id,
+  7      rentals.user_id AS rental_user_id,
+  8      rentals.car_id AS rental_car_id,
+  9      rentals.rental_date,
+ 10      rentals.return_date,
+ 11      rentals.price,
+ 12      locations.location_id,
+ 13      locations.city,
+ 14      locations.country,
+ 15      locations.street,
+ 16      locations.zip_code,
+ 17      bookings.booking_id,
+ 18      bookings.user_id AS booking_user_id,
+ 19      bookings.location_id AS booking_location_id,
+ 20      bookings.booking_date,
+ 21      bookings.booking_status
+ 22  FROM cars
+ 23  JOIN rentals ON cars.car_id = rentals.car_id
+ 24  JOIN locations ON rentals.location_id = locations.location_id
+ 25  JOIN bookings ON rentals.booking_id = bookings.booking_id;
+
+View created.
+
+SQL> grant select, update on employee_booking to car_rental_employee;
+
+Grant succeeded.
+
+SQL> CREATE OR REPLACE VIEW customer_booking AS
+  2  SELECT
+  3      cars.car_id,
+  4      cars.brand,
+  5      cars.model,
+  6      rentals.price,
+  7      locations.location_id,
+  8      locations.city,
+  9      locations.country,
+ 10      locations.street,
+ 11      locations.zip_code,
+ 12      bookings.booking_id,
+ 13      bookings.booking_date,
+ 14      bookings.booking_status
+ 15  FROM cars
+ 16  JOIN rentals ON cars.car_id = rentals.car_id
+ 17  JOIN locations ON rentals.location_id = locations.location_id
+ 18  JOIN bookings ON rentals.booking_id = bookings.booking_id;
+
+View created.
+
+SQL> grant select, update on customer_booking to car_rental_customer;
+
+Grant succeeded.
+
+SQL> grant select, insert, update, delete on rentals to car_rental_admin;
+
+Grant succeeded.
+
+SQL> grant select, insert, update , delete on locations to car_rental_admin;
+
+Grant succeeded.
+
+SQL> grant select, insert , update, delete on bookings to car_rental_admin;
+
+Grant succeeded.
+
+SQL> insert into users (user_id, username, password, role) values
+  2  (1, 'customer1', 'custpass', 'customer');
+
+1 row created.
+
+SQL> insert into users (user_id, username, password, role) values
+  2  (2, 'customer2', 'custpass2', 'customer');
+
+1 row created.
+
+SQL>  insert into users (user_id, username, password, role) values
+  2  (3, 'customer3', 'custpass3', 'customer');
+
+1 row created.
+
+SQL>  insert into users (user_id, username, password, role) values
+  2  (4, 'customer4', 'custpass4', 'customer');
+
+1 row created.
+
+SQL>  insert into users (user_id, username, password, role) values
+  2  (5, 'customer5', 'custpass5', 'customer');
+
+1 row created.
+
+SQL> insert into users (user_id, username, password, role) values
+  2  (6, 'admin', 'adminpass', 'admin');
+
+1 row created.
+
+SQL> insert into users (user_id, username, password, role) values
+  2  (7, 'employee1', 'emppass', 'employee');
+
+1 row created.
+
+SQL> insert into users (user_id, username, password, role) values
+  2  (8, 'employee2', 'emppass2', 'employee');
+
+1 row created.
+
+SQL> insert into cars (car_id, brand, model, year, available) values
+  2  (1, 'Toyota', 'Corolla', 2020, 1);
+
+1 row created.
+
+SQL> insert into cars (car_id, brand, model, year, available) values
+  2  (2, 'Honda', 'Civic', 2019, 1);
+
+1 row created.
+
+SQL> insert into cars (car_id, brand, model, year, available) values
+  2  (3, 'Ford', 'Mustang', 2022, 1);
+
+1 row created.
+
+SQL> insert into cars (car_id, brand, model, year, available) values
+  2  (4, 'Chevrolet', 'Camaro', 2021, 1);
+
+1 row created.
+
+SQL> insert into cars (car_id, brand, model, year, available) values
+  2  (5, 'BMW', 'X5', 2023, 1);
+
+1 row created.
+
+SQL> insert into rentals (rental_id, user_id, car_id, location_id, booking_id, rental_date, return_date,price) values
+  2  (1, 1, 1, 1, 1, NULL, NULL, 500.00);
+
+1 row created.
+
+SQL> insert into rentals (rental_id, user_id, car_id, location_id, booking_id, rental_date, return_date,price) values
+  2  (2, 2, 2, 2, 2, NULL, NULL, 600.00);
+
+1 row created.
+
+SQL> insert into rentals (rental_id, user_id, car_id, location_id, booking_id, rental_date, return_date,price) values
+  2  (3, 3, 3, 3, 3, NULL, NULL, 700.00);
+
+1 row created.
+
+SQL> insert into rentals (rental_id, user_id, car_id, location_id, booking_id, rental_date, return_date,price) values
+  2  (4, 4, 4, 4, 4, NULL, NULL, 550.00);
+
+1 row created.
+
+SQL> insert into rentals (rental_id, user_id, car_id, location_id, booking_id, rental_date, return_date,price) values
+  2  (5, 5, 5, 5, 5, NULL, NULL, 800.00);
+
+1 row created.
+
+SQL> insert into locations (location_id, city, country, street, zip_code) values
+  2  (1, 'New York', 'USA', 'Broadway St', 10001);
+
+1 row created.
+
+SQL> insert into locations (location_id, city, country, street, zip_code) values
+  2  (2, 'Los Angeles', 'USA', 'Hollywood Blvd', 90028);
+
+1 row created.
+
+SQL> insert into locations (location_id, city, country, street, zip_code) values
+  2  (3, 'London', 'UK', 'Oxford Street', 12345);
+
+1 row created.
+
+SQL> insert into locations (location_id, city, country, street, zip_code) values
+  2  (4, 'Paris', 'France', 'Champs-êlysÇes', 67890);
+
+1 row created.
+
+SQL> insert into locations (location_id, city, country, street, zip_code) values
+  2  (5, 'Tokyo', 'Japan', 'Shibuya Crossing', 98765);
+
+1 row created.
+
+SQL> insert into bookings (booking_id,user_id, location_id, car_id, booking_date, booking_status) values
+  2  (1, 1, 1, 1, NULL, 'Unbooked');
+
+1 row created.
+
+SQL> insert into bookings (booking_id,user_id, location_id, car_id, booking_date, booking_status) values
+  2  (2, 2, 2, 2, NULL, 'Unbooked');
+
+1 row created.
+
+SQL> insert into bookings (booking_id,user_id, location_id, car_id, booking_date, booking_status) values
+  2  (3, 3, 3, 3, NULL, 'Unbooked');
+
+1 row created.
+
+SQL> insert into bookings (booking_id,user_id, location_id, car_id, booking_date, booking_status) values
+  2  (4, 4, 4, 4, NULL, 'Unbooked');
+
+1 row created.
+
+SQL> insert into bookings (booking_id,user_id, location_id, car_id, booking_date, booking_status) values
+  2  (5, 5, 5, 5, NULL, 'Unbooked');
+
+1 row created.
+
+SQL> CREATE OR REPLACE TRIGGER booking_status_update_trigger
+  2  FOR UPDATE OF booking_date ON bookings
+  3  COMPOUND TRIGGER
+  4
+  5      -- Package-level variables
+  6      update_case NUMBER := 0;
+  7
+  8      BEFORE EACH ROW IS
+  9      BEGIN
+ 10          IF :NEW.booking_date IS NOT NULL AND :OLD.booking_date IS NULL THEN
+ 11              update_case := 1; -- Case 1: Booking date is updated to not null
+ 12          ELSIF :NEW.booking_date IS NULL AND :OLD.booking_date IS NOT NULL THEN
+ 13              update_case := 2; -- Case 2: Booking date is updated to null
+ 14          ELSE
+ 15              update_case := 0; -- No change in booking_date
+ 16          END IF;
+ 17      END BEFORE EACH ROW;
+ 18
+ 19      AFTER STATEMENT IS
+ 20      BEGIN
+ 21          IF update_case = 1 THEN
+ 22              FOR rec IN (SELECT * FROM bookings WHERE booking_date IS NOT NULL) LOOP
+ 23                  -- Handle updates when booking_date is set to not null
+ 24                  UPDATE rentals
+ 25                  SET return_date = rec.booking_date,
+ 26                      rental_date = SYSDATE
+ 27                  WHERE booking_id = rec.booking_id;
+ 28
+ 29                  UPDATE cars
+ 30                  SET available = 0
+ 31                  WHERE car_id IN (SELECT car_id FROM rentals WHERE booking_id = rec.booking_id);
+ 32
+ 33                  UPDATE bookings
+ 34                  SET booking_status = 'Booked'
+ 35                  WHERE booking_id = rec.booking_id;
+ 36              END LOOP;
+ 37          END IF;
+ 38
+ 39          IF update_case = 2 THEN
+ 40              FOR rec IN (SELECT * FROM bookings WHERE booking_date IS NULL) LOOP
+ 41                  -- Handle updates when booking_date is set to null
+ 42                  UPDATE rentals
+ 43                  SET return_date = NULL,
+ 44                      rental_date = NULL
+ 45                  WHERE booking_id = rec.booking_id;
+ 46
+ 47                  UPDATE cars
+ 48                  SET available = 1
+ 49                  WHERE car_id IN (SELECT car_id FROM rentals WHERE booking_id = rec.booking_id);
+ 50
+ 51                  UPDATE bookings
+ 52                  SET booking_status = 'Unbooked'
+ 53                  WHERE booking_id = rec.booking_id;
+ 54              END LOOP;
+ 55          END IF;
+ 56      END AFTER STATEMENT;
+ 57
+ 58  END booking_status_update_trigger;
+ 59  /
+
+Trigger created.
+
+SQL> CREATE OR REPLACE TRIGGER validate_booking_date
+  2  BEFORE INSERT OR UPDATE OF booking_date ON bookings
+  3  FOR EACH ROW
+  4  BEGIN
+  5      IF :NEW.booking_date < SYSDATE THEN
+  6          RAISE_APPLICATION_ERROR(-20001, 'Booking date cannot be in the past.');
+  7      END IF;
+  8  EXCEPTION
+  9      WHEN OTHERS THEN
+ 10          -- Log or handle the exception (e.g., log to an error table)
+ 11          -- Reraise the exception for the caller to handle
+ 12          RAISE;
+ 13  END;
+ 14  /
+
+Trigger created.
+
+CREATE OR REPLACE PROCEDURE update_customer_booking_date(c_id IN NUMBER,new_booking_date_str IN VARCHAR2)
+IS
+    new_booking_date DATE;
+BEGIN
+    new_booking_date := TO_DATE(new_booking_date_str, 'DD-MM-YYYY');
+
+    UPDATE customer_booking
+    SET booking_date = new_booking_date
+    WHERE car_id = c_id;
+	
+    DBMS_OUTPUT.PUT_LINE('The Booking is successful! Rental Date: '|| SYSDATE || ' Return Date: '|| new_booking_date_str); 
+    COMMIT;
+END;
+/
+
+Procedure Created
+
+SQL> CREATE OR REPLACE PROCEDURE check_and_unbook_cars AS
+  2  BEGIN
+  3      FOR rec IN (
+  4          SELECT * FROM bookings WHERE booking_date <= SYSDATE AND booking_status = 'Booked'
+  5      ) LOOP
+  6          -- Update the booking status
+  7          UPDATE bookings
+  8          SET booking_status = 'Unbooked',
+  9              booking_date = NULL  -- Set booking_date to NULL
+ 10          WHERE booking_id = rec.booking_id;
+ 11
+ 12          -- Unbook the cars meeting the condition
+ 13          UPDATE rentals
+ 14          SET return_date = NULL,
+ 15              rental_date = NULL
+ 16          WHERE booking_id = rec.booking_id;
+ 17
+ 18          UPDATE cars
+ 19          SET available = 1
+ 20          WHERE car_id IN (SELECT car_id FROM rentals WHERE booking_id = rec.booking_id);
+ 21      END LOOP;
+ 22  END;
+ 23  /
+
+Procedure created.
+
+SQL> -- Create a scheduled job to run the procedure every day at a specific time
+SQL> BEGIN
+  2      DBMS_SCHEDULER.CREATE_JOB (
+  3          job_name        => 'CHECK_UNBOOKED_CARS_JOB',
+  4          job_type        => 'PLSQL_BLOCK',
+  5          job_action      => 'BEGIN check_and_unbook_cars; END;',
+  6          start_date      => SYSTIMESTAMP,
+  7          repeat_interval => 'FREQ=DAILY; BYHOUR=0; BYMINUTE=0; BYSECOND=0;',
+  8          enabled         => TRUE
+  9      );
+ 10  END;
+ 11  /
+
+PL/SQL procedure successfully completed.
+
+SQL> CREATE OR REPLACE TRIGGER io_customer_booking_update
+  2  INSTEAD OF UPDATE ON customer_booking
+  3  FOR EACH ROW
+  4  BEGIN
+  5      -- Define update logic using direct updates on the underlying tables
+  6      IF UPDATING('BOOKING_STATUS') OR UPDATING('BOOKING_DATE') THEN
+  7          UPDATE bookings
+  8          SET booking_status = :NEW.booking_status,
+  9              booking_date = :NEW.booking_date
+ 10          WHERE booking_id = :NEW.booking_id;
+ 11      ELSE
+ 12          -- Raise an exception for columns other than booking_status or booking_date
+ 13          RAISE_APPLICATION_ERROR(-20000, 'Insufficient privileges to update this column.');
+ 14      END IF;
+ 15  END;
+ 16  /
+
+Trigger created.
+
+SQL> CREATE OR REPLACE TRIGGER io_employee_booking_update
+  2  INSTEAD OF UPDATE ON employee_booking
+  3  FOR EACH ROW
+  4  BEGIN
+  5      -- Define update logic using direct updates on the underlying tables
+  6      IF UPDATING('BOOKING_STATUS') OR UPDATING('BOOKING_DATE') THEN
+  7          UPDATE bookings
+  8          SET booking_status = :NEW.booking_status,
+  9              booking_date = :NEW.booking_date
+ 10          WHERE booking_id = :NEW.booking_id;
+ 11      ELSE
+ 12          -- Raise an exception for columns other than booking_status or booking_date
+ 13          RAISE_APPLICATION_ERROR(-20000, 'Insufficient privileges to update this column.');
+ 14      END IF;
+ 15  END;
+ 16  /
+
+Trigger created.
+
+SQL> connect
+Enter user-name: car_rental_employee
+Connected.
+SQL> select*from car_rental_system.employee_users;
+
+   USER_ID USERNAME                                                                                 
+---------- --------------------------------------------------                                       
+         1 customer1                                                                                
+         2 customer2                                                                                
+         3 customer3                                                                                
+         4 customer4                                                                                
+         5 customer5                                                                                
+         7 employee1                                                                                
+         8 employee2                                                                                
+
+7 rows selected.
+
+SQL> select*from car_rental_system.employee_booking;
+
+    CAR_ID BRAND                                              MODEL                                               RENTAL_ID RENTAL_USER_ID RENTAL_CAR_ID RENTAL_DA RETURN_DA      PRICE LOCATION_ID CITY                                               COUNTRY                                            STREET                                               ZIP_CODE BOOKING_ID BOOKING_USER_ID BOOKING_LOCATION_ID BOOKING_D BOOKING_STATUS
+---------- -------------------------------------------------- -------------------------------------------------- ---------- -------------- ------------- --------- --------- ---------- ----------- -------------------------------------------------- -------------------------------------------------- -------------------------------------------------- ---------- ---------- --------------- ------------------- --------- --------------------
+         1 Toyota                                             Corolla                                                     1              1             1                            500           1 New York                                           USA                                                Broadway St                                             10001          1               1                   1           Unbooked
+         2 Honda                                              Civic                                                       2              2             2                            600           2 Los Angeles                                        USA                                                Hollywood Blvd                                          90028          2               2                   2           Unbooked
+         3 Ford                                               Mustang                                                     3              3             3                            700           3 London                                             UK                                                 Oxford Street                                           12345          3               3                   3           Unbooked
+         4 Chevrolet                                          Camaro                                                      4              4             4                            550           4 Paris                                              France                                             Champs-êlysÇes                                          67890          4               4                   4           Unbooked
+         5 BMW                                                X5                                                          5              5             5                            800           5 Tokyo                                              Japan                                              Shibuya Crossing                                        98765          5               5                   5           Unbooked
+
+SQL> update car_rental_system.employee_booking
+  2  set booking_date=to_date('2023-11-26','YY-MM-DD')
+  3  where car_id=1;
+
+1 row updated.
+
+SQL> select*from car_rental_system.employee_booking;
+
+    CAR_ID BRAND                                              MODEL                                               RENTAL_ID RENTAL_USER_ID RENTAL_CAR_ID RENTAL_DA RETURN_DA      PRICE LOCATION_ID CITY                                               COUNTRY                                            STREET                                               ZIP_CODE BOOKING_ID BOOKING_USER_ID BOOKING_LOCATION_ID BOOKING_D BOOKING_STATUS
+---------- -------------------------------------------------- -------------------------------------------------- ---------- -------------- ------------- --------- --------- ---------- ----------- -------------------------------------------------- -------------------------------------------------- -------------------------------------------------- ---------- ---------- --------------- ------------------- --------- --------------------
+         1 Toyota                                             Corolla                                                     1              1             1 23-NOV-23 26-NOV-23        500           1 New York                                           USA                                                Broadway St                                             10001          1               1                   1 26-NOV-23 Booked
+         2 Honda                                              Civic                                                       2              2             2                            600           2 Los Angeles                                        USA                                                Hollywood Blvd                                          90028          2               2                   2           Unbooked
+         3 Ford                                               Mustang                                                     3              3             3                            700           3 London                                             UK                                                 Oxford Street                                           12345          3               3                   3           Unbooked
+         4 Chevrolet                                          Camaro                                                      4              4             4                            550           4 Paris                                              France                                             Champs-êlysÇes                                          67890          4               4                   4           Unbooked
+         5 BMW                                                X5                                                          5              5             5                            800           5 Tokyo                                              Japan                                              Shibuya Crossing                                        98765          5               5                   5           Unbooked
+
+SQL> update car_rental_system.employee_booking
+  2  set model='GTR'
+  3  where car_id=1;
+update car_rental_system.employee_booking
+                         *
+ERROR at line 1:
+ORA-20000: Insufficient privileges to update this column.
+ORA-06512: at "CAR_RENTAL_SYSTEM.IO_EMPLOYEE_BOOKING_UPDATE", line 10
+ORA-04088: error during execution of trigger 'CAR_RENTAL_SYSTEM.IO_EMPLOYEE_BOOKING_UPDATE'
+
+SQL> update car_rental_system.employee_booking
+  2  set booking_date=NULL
+  3  where car_id=1;
+
+1 row updated.
+
+SQL> select*from car_rental_system.employee_booking;
+
+    CAR_ID BRAND                                              MODEL                                               RENTAL_ID RENTAL_USER_ID RENTAL_CAR_ID RENTAL_DA RETURN_DA      PRICE LOCATION_ID CITY                                               COUNTRY                                            STREET                                               ZIP_CODE BOOKING_ID BOOKING_USER_ID BOOKING_LOCATION_ID BOOKING_D BOOKING_STATUS
+---------- -------------------------------------------------- -------------------------------------------------- ---------- -------------- ------------- --------- --------- ---------- ----------- -------------------------------------------------- -------------------------------------------------- -------------------------------------------------- ---------- ---------- --------------- ------------------- --------- --------------------
+         1 Toyota                                             Corolla                                                     1              1             1                            500           1 New York                                           USA                                                Broadway St                                             10001          1               1                   1           Unbooked
+         2 Honda                                              Civic                                                       2              2             2                            600           2 Los Angeles                                        USA                                                Hollywood Blvd                                          90028          2               2                   2           Unbooked
+         3 Ford                                               Mustang                                                     3              3             3                            700           3 London                                             UK                                                 Oxford Street                                           12345          3               3                   3           Unbooked
+         4 Chevrolet                                          Camaro                                                      4              4             4                            550           4 Paris                                              France                                             Champs-êlysÇes                                          67890          4               4                   4           Unbooked
+         5 BMW                                                X5                                                          5              5             5                            800           5 Tokyo                                              Japan                                              Shibuya Crossing                                        98765          5               5                   5           Unbooked
+
+SQL> select*from car_rental_system.customer_users;
+
+   USER_ID USERNAME
+---------- --------------------------------------------------
+         1 customer1
+         2 customer2
+         3 customer3
+         4 customer4
+         5 customer5
+
+SQL> select*from car_rental_system.customer_booking;
+
+    CAR_ID BRAND                                              MODEL                                                   PRICE LOCATION_ID CITY                                               COUNTRY                                            STREET                                               ZIP_CODE BOOKING_ID BOOKING_D BOOKING_STATUS
+---------- -------------------------------------------------- -------------------------------------------------- ---------- ----------- -------------------------------------------------- -------------------------------------------------- -------------------------------------------------- ---------- ---------- --------- --------------------
+         1 Toyota                                             Corolla                                                   500           1 New York                                           USA                                                Broadway St                                             10001          1           Unbooked
+         2 Honda                                              Civic                                                     600           2 Los Angeles                                        USA                                                Hollywood Blvd                                          90028          2           Unbooked
+         3 Ford                                               Mustang                                                   700           3 London                                             UK                                                 Oxford Street                                           12345          3           Unbooked
+         4 Chevrolet                                          Camaro                                                    550           4 Paris                                              France                                             Champs-êlysÇes                                          67890          4           Unbooked
+         5 BMW                                                X5                                                        800           5 Tokyo                                              Japan                                              Shibuya Crossing                                        98765          5           Unbooked
+
+SQL> update car_rental_system.customer_booking
+  2  set booking_date=to_date('2023-11-26','YY-MM-DD')
+  3  where car_id=1;
+
+1 row updated.
+
+SQL> select*from car_rental_system.customer_booking;
+
+    CAR_ID BRAND                                              MODEL                                                   PRICE LOCATION_ID CITY                                               COUNTRY                                            STREET                                               ZIP_CODE BOOKING_ID BOOKING_D BOOKING_STATUS
+---------- -------------------------------------------------- -------------------------------------------------- ---------- ----------- -------------------------------------------------- -------------------------------------------------- -------------------------------------------------- ---------- ---------- --------- --------------------
+         1 Toyota                                             Corolla                                                   500           1 New York                                           USA                                                Broadway St                                             10001          1 26-NOV-23 Booked
+         2 Honda                                              Civic                                                     600           2 Los Angeles                                        USA                                                Hollywood Blvd                                          90028          2           Unbooked
+         3 Ford                                               Mustang                                                   700           3 London                                             UK                                                 Oxford Street                                           12345          3           Unbooked
+         4 Chevrolet                                          Camaro                                                    550           4 Paris                                              France                                             Champs-êlysÇes                                          67890          4           Unbooked
+         5 BMW                                                X5                                                        800           5 Tokyo                                              Japan                                              Shibuya Crossing                                        98765          5           Unbooked
+
+SQL> update car_rental_system.customer_booking
+  2  set model='GTR'
+  3  where car_id=1;
+update car_rental_system.customer_booking
+                         *
+ERROR at line 1:
+ORA-20000: Insufficient privileges to update this column.
+ORA-06512: at "CAR_RENTAL_SYSTEM.IO_CUSTOMER_BOOKING_UPDATE", line 10
+ORA-04088: error during execution of trigger 'CAR_RENTAL_SYSTEM.IO_CUSTOMER_BOOKING_UPDATE'
+
+
+SQL> update car_rental_system.customer_booking
+  2  set booking_date=NULL
+  3  where car_id=1;
+
+1 row updated.
+
+SQL> select*from car_rental_system.customer_booking;
+
+    CAR_ID BRAND                                              MODEL                                                   PRICE LOCATION_ID CITY                                               COUNTRY                                            STREET                                               ZIP_CODE BOOKING_ID BOOKING_D BOOKING_STATUS
+---------- -------------------------------------------------- -------------------------------------------------- ---------- ----------- -------------------------------------------------- -------------------------------------------------- -------------------------------------------------- ---------- ---------- --------- --------------------
+         1 Toyota                                             Corolla                                                   500           1 New York                                           USA                                                Broadway St                                             10001          1           Unbooked
+         2 Honda                                              Civic                                                     600           2 Los Angeles                                        USA                                                Hollywood Blvd                                          90028          2           Unbooked
+         3 Ford                                               Mustang                                                   700           3 London                                             UK                                                 Oxford Street                                           12345          3           Unbooked
+         4 Chevrolet                                          Camaro                                                    550           4 Paris                                              France                                             Champs-êlysÇes                                          67890          4           Unbooked
+         5 BMW                                                X5                                                        800           5 Tokyo                                              Japan                                              Shibuya Crossing                                        98765          5           Unbooked
+
+
+
